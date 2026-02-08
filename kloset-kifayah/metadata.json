@@ -1,0 +1,8 @@
+
+{
+  "name": "Kloset Kifayah",
+  "description": "A sleek, editorial marketplace for buying, selling, borrowing, and renting modest clothing like hijabs, abayas, thobes, and dresses.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

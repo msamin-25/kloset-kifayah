@@ -1,0 +1,16 @@
+# System
+.DS_Store
+Thumbs.db
+**/.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Local Frontend Testing
+frontend/
+node_modules/
+
+# Secrets
+.env
+.env.*.local

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kloset Kifayah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Italianno&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-beige: #F8F7F2;
+      --surface-white: #FFFFFF;
+      --text-espresso: #2D241E;
+      --accent-rose: #D4A5A5;
+      --hairline: #E5E2D9;
+    }
+    html, body, #root {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      cursor: none !important;
+    }
+    body {
+      /* Re-enforcing Playfair Display globally to match the KLOSET font */
+      font-family: 'Playfair Display', serif !important;
+      background-color: var(--bg-beige);
+      color: var(--text-espresso);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    
+    button, input, select, textarea, label, span, p, div, h1, h2, h3, h4 {
+      font-family: 'Playfair Display', serif !important;
+      cursor: none !important;
+    }
+    
+    .font-script {
+      font-family: 'Italianno', cursive !important;
+    }
+
+    .thin-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .thin-scrollbar::-webkit-scrollbar-thumb {
+      background: var(--hairline);
+    }
+
+    @keyframes gradient-flow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .animate-gradient-text {
+      background: linear-gradient(90deg, #2D241E, #D4A5A5, #2D241E);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient-flow 4s ease-in-out infinite;
+    }
+
+    .animate-gradient-bg {
+      background: linear-gradient(90deg, #2D241E, #D4A5A5, #2D241E);
+      background-size: 200% auto;
+      animation: gradient-flow 4s ease-in-out infinite;
+    }
+
+    @keyframes sparkle-fade {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; filter: blur(2px); }
+      20% { opacity: 1; filter: blur(0px); }
+      100% { transform: translate(-50%, -50%) scale(1.2) rotate(180deg); opacity: 0; filter: blur(1px); }
+    }
+    .animate-sparkle {
+      animation: sparkle-fade 0.7s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    }
+    .glow-sparkle {
+      filter: drop-shadow(0 0 2px currentColor);
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            beige: '#F8F7F2',
+            espresso: '#2D241E',
+            rose: {
+              DEFAULT: '#D4A5A5',
+              light: '#F2E4E4',
+              soft: '#EBDADA',
+            },
+            forest: '#4A5D4E',
+            hairline: '#E5E2D9',
+          },
+          borderRadius: {
+            'sm': '2px',
+            'md': '4px',
+            'lg': '6px',
+          }
+        }
+      }
+    }
+  </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.468.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

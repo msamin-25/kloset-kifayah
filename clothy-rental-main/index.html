@@ -1,0 +1,219 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clothy - Modest Fashion Rental & Pre-loved</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gold: #d97706;
+            --light-gold: #fbbf24;
+            --emerald-accent: #059669;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            cursor: none;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Sparkle Text Effect */
+        .sparkle-text {
+            background: linear-gradient(
+                to right, 
+                var(--primary-gold) 20%, 
+                #fff 40%, 
+                var(--primary-gold) 60%, 
+                var(--light-gold) 80%
+            );
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 4s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        /* Glint Animation */
+        .glint-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .glint-effect::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.4),
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: 0.8s;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .glint-effect:hover::after {
+            left: 100%;
+            top: 100%;
+            opacity: 1;
+        }
+
+        /* Custom Cursor */
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-gold);
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            border-radius: 50%;
+            transition: transform 0.1s ease;
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(217, 119, 6, 0.3);
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            border-radius: 50%;
+            transition: transform 0.15s ease-out, opacity 0.3s ease;
+        }
+
+        /* Particle System */
+        .sparkle-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9997;
+            border-radius: 50%;
+            animation: particle-fade 0.8s ease-out forwards;
+        }
+        @keyframes particle-fade {
+            0% { transform: scale(1) translate(0, 0); opacity: 1; }
+            100% { transform: scale(0) translate(var(--tw-translate-x), var(--tw-translate-y)); opacity: 0; }
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(var(--primary-gold) 0.5px, transparent 0.5px);
+            background-size: 40px 40px;
+            opacity: 0.03;
+        }
+
+        /* Mouse Glow */
+        .mouse-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            transform: translate(-50%, -50%);
+        }
+
+        .modest-mode-active .mouse-glow {
+            background: radial-gradient(circle, rgba(5, 150, 105, 0.08) 0%, transparent 70%);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4"
+  }
+}
+</script>
+</head>
+<body class="bg-stone-50 text-stone-900 relative">
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+    <div class="mouse-glow" id="mouse-glow"></div>
+    <div class="fixed inset-0 bg-pattern pointer-events-none"></div>
+    <div id="root"></div>
+
+    <script>
+        const dot = document.getElementById('cursor-dot');
+        const outline = document.getElementById('cursor-outline');
+        const glow = document.getElementById('mouse-glow');
+
+        let lastX = 0;
+        let lastY = 0;
+
+        const createParticle = (x, y) => {
+            const p = document.createElement('div');
+            p.className = 'sparkle-particle';
+            const size = Math.random() * 4 + 2;
+            const isGold = Math.random() > 0.3;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            p.style.backgroundColor = document.body.classList.contains('modest-mode-active') 
+                ? (isGold ? '#d97706' : '#10b981') 
+                : (isGold ? '#d97706' : '#fbbf24');
+            p.style.left = `${x}px`;
+            p.style.top = `${y}px`;
+            
+            const tx = (Math.random() - 0.5) * 100;
+            const ty = (Math.random() - 0.5) * 100;
+            p.style.setProperty('--tw-translate-x', `${tx}px`);
+            p.style.setProperty('--tw-translate-y', `${ty}px`);
+            
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 800);
+        };
+
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+
+            dot.style.left = `${posX}px`;
+            dot.style.top = `${posY}px`;
+
+            outline.animate({
+                left: `${posX}px`,
+                top: `${posY}px`
+            }, { duration: 500, fill: "forwards" });
+
+            glow.style.left = `${posX}px`;
+            glow.style.top = `${posY}px`;
+
+            // Create particles on move
+            const dist = Math.hypot(posX - lastX, posY - lastY);
+            if (dist > 15) {
+                createParticle(posX, posY);
+                lastX = posX;
+                lastY = posY;
+            }
+        });
+
+        document.addEventListener('mousedown', () => {
+            dot.style.transform = 'scale(2.5)';
+            outline.style.transform = 'scale(0.7)';
+            for(let i=0; i<8; i++) createParticle(lastX, lastY);
+        });
+        document.addEventListener('mouseup', () => {
+            dot.style.transform = 'scale(1)';
+            outline.style.transform = 'scale(1)';
+        });
+    </script>
+</body>
+</html>

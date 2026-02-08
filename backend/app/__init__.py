@@ -1,0 +1,3 @@
+"""
+Kloset Kifayah Backend Application
+"""
