@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Camera, X, Plus, Info, Loader2, CheckCircle, XCircle, Sparkles } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabaseRestInsert, supabaseStorageUpload, supabaseStoragePublicUrl } from '../lib/supabase';
 import { analyzeImage, type AnalysisResult } from '../lib/imageAnalyzer';
 import AddressInput from '../components/AddressInput';
 import type { Category, Size, Condition, ListingMode } from '../types';
@@ -168,75 +168,97 @@ export default function PostListing({ onSubmit, currentUserId, currentUserLocati
       return;
     }
 
+    // Validate location is provided
+    if (!formData.location || formData.location.trim() === '') {
+      setError('Please provide a pickup location');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // 1. Create the listing
-      const { data: listing, error: listingError } = await supabase
-        .from('listings')
-        .insert({
-          owner_id: currentUserId,
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          size: formData.size,
-          condition: formData.condition,
-          price_per_day: formData.mode === 'rent' ? formData.priceRentPerDay : 0,
-          sell_price: formData.mode === 'buy' ? formData.sellPrice : null,
-          deposit_amount: formData.mode === 'borrow' ? formData.depositAmount : null,
-          location: formData.location,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
-          shipping_available: formData.shippingAvailable,
-          status: 'active'
-        })
-        .select()
-        .single();
+      // Prepare listing data (only columns that exist in the DB)
+      // NOTE: is_modest, sell_price, tags do NOT exist in the actual DB
+      const listingData: Record<string, any> = {
+        owner_id: currentUserId,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        size: formData.size,
+        condition: formData.condition,
+        price_per_day: formData.mode === 'rent' ? formData.priceRentPerDay : (formData.mode === 'buy' ? (formData.sellPrice || 0) : 0),
+        deposit_amount: formData.mode === 'borrow' ? formData.depositAmount : 0,
+        location: formData.location,
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null,
+        status: 'active',
+        is_approved: true,
+      };
 
-      if (listingError) throw listingError;
+      console.log('Creating listing with data:', listingData);
 
-      // 2. Upload images to Supabase Storage
+      // 1. Create the listing (direct REST — bypasses Supabase JS AbortController bug)
+      const { data: listing, error: listingError } = await supabaseRestInsert('listings', listingData);
+
+      if (listingError) {
+        console.error('Listing creation error:', listingError);
+        throw new Error(listingError.message || `Database error: ${listingError.code}`);
+      }
+
+      console.log('Listing created:', listing.id);
+
+      // 2. Upload images to Supabase Storage (direct REST)
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
         const fileExt = img.file.name.split('.').pop();
-        const fileName = `${listing.id}/${i}.${fileExt}`;
+        const filePath = `${listing.id}/${i}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('listing-images')
-          .upload(fileName, img.file);
+        console.log('Uploading image:', filePath);
+
+        const { error: uploadError } = await supabaseStorageUpload('listing-images', filePath, img.file);
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
           continue;
         }
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('listing-images')
-          .getPublicUrl(fileName);
+        // Get public URL (no network call)
+        const publicUrl = supabaseStoragePublicUrl('listing-images', filePath);
 
-        // 3. Create listing_images record
-        await supabase
-          .from('listing_images')
-          .insert({
-            listing_id: listing.id,
-            image_url: urlData.publicUrl,
-            display_order: i
-          });
+        // 3. Create listing_images record (direct REST)
+        const { error: imageRecordError } = await supabaseRestInsert('listing_images', {
+          listing_id: listing.id,
+          image_url: publicUrl,
+          display_order: i,
+        });
+
+        if (imageRecordError) {
+          console.error('Image record error:', imageRecordError);
+        }
       }
 
+      console.log('Listing submitted successfully, redirecting...');
       onSubmit(listing.id);
     } catch (err: any) {
       console.error('Submit error:', err);
+      console.error('Error name:', err.name);
+      console.error('Error code:', err.code);
+      console.error('Error details:', err.details);
 
       // Handle specific error types with user-friendly messages
-      if (err.message?.includes('AbortError') || err.message?.includes('abort')) {
+      if (err.name === 'AbortError' || err.message?.includes('abort')) {
         setError('Request was interrupted. Please check your internet connection and try again.');
       } else if (err.message?.includes('timeout')) {
         setError('Request timed out. Please check your internet connection and try again.');
       } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
         setError('Network error. Please check your internet connection and try again.');
+      } else if (err.code === '23502') {
+        // NOT NULL violation
+        setError('Please fill in all required fields (title, description, category, condition, location).');
+      } else if (err.code === '23503') {
+        // Foreign key violation
+        setError('Your session may have expired. Please refresh and try again.');
       } else {
         setError(err.message || 'Failed to create listing. Please try again.');
       }

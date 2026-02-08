@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 
 interface AddressInputProps {
@@ -18,45 +18,110 @@ export default function AddressInput({
 }: AddressInputProps) {
     const [isDetecting, setIsDetecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [inputValue, setInputValue] = useState(value || '');
+    const [suggestions, setSuggestions] = useState<google.maps.places.AutocompleteSuggestion[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+    const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
+    // Close dropdown when clicking outside
     useEffect(() => {
-        if (!inputRef.current) return;
-
-        const initAutocomplete = () => {
-            if (!window.google?.maps?.places) return;
-
-            autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current!, {
-                types: ['address'],
-                fields: ['formatted_address', 'geometry'],
-            });
-
-            autocompleteRef.current.addListener('place_changed', () => {
-                const place = autocompleteRef.current?.getPlace();
-                if (place?.geometry?.location) {
-                    const lat = place.geometry.location.lat();
-                    const lng = place.geometry.location.lng();
-                    const address = place.formatted_address || '';
-                    onChange(address, lat, lng);
-                    setError(null);
-                }
-            });
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setShowSuggestions(false);
+            }
         };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-        // Google Maps API might still be loading
-        if (window.google?.maps?.places) {
-            initAutocomplete();
-        } else {
-            const interval = setInterval(() => {
-                if (window.google?.maps?.places) {
-                    clearInterval(interval);
-                    initAutocomplete();
-                }
-            }, 200);
-            return () => clearInterval(interval);
+    // Create a new session token
+    const getSessionToken = useCallback(() => {
+        if (!sessionTokenRef.current && window.google?.maps?.places) {
+            sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken();
         }
-    }, [onChange]);
+        return sessionTokenRef.current;
+    }, []);
+
+    // Fetch suggestions using the new AutocompleteSuggestion API
+    const fetchSuggestions = useCallback(async (input: string) => {
+        if (!input || input.length < 3) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        if (!window.google?.maps?.places?.AutocompleteSuggestion) {
+            // Fallback: just use the text input without autocomplete
+            return;
+        }
+
+        try {
+            const request: google.maps.places.AutocompleteRequest = {
+                input,
+                sessionToken: getSessionToken() || undefined,
+            };
+
+            const { suggestions: results } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+            setSuggestions(results || []);
+            setShowSuggestions((results || []).length > 0);
+        } catch (err) {
+            console.error('Autocomplete error:', err);
+            setSuggestions([]);
+        }
+    }, [getSessionToken]);
+
+    // Handle text input change with debounce
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setInputValue(val);
+
+        if (!val) {
+            onChange('', undefined, undefined);
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        // Debounce autocomplete requests
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+    };
+
+    // Handle selecting a suggestion
+    const handleSelectSuggestion = async (suggestion: google.maps.places.AutocompleteSuggestion) => {
+        setShowSuggestions(false);
+        setSuggestions([]);
+
+        const placePrediction = suggestion.placePrediction;
+        if (!placePrediction) return;
+
+        const displayText = placePrediction.text?.toString() || '';
+        setInputValue(displayText);
+
+        try {
+            // Fetch full place details for lat/lng
+            const place = placePrediction.toPlace();
+            await place.fetchFields({ fields: ['location', 'formattedAddress'] });
+
+            const lat = place.location?.lat();
+            const lng = place.location?.lng();
+            const address = place.formattedAddress || displayText;
+
+            setInputValue(address);
+            onChange(address, lat, lng);
+            setError(null);
+
+            // Reset session token after a place is selected
+            sessionTokenRef.current = null;
+        } catch (err) {
+            console.error('Place details error:', err);
+            // Still use the text even if we can't get coordinates
+            onChange(displayText, undefined, undefined);
+        }
+    };
 
     const handleDetectLocation = () => {
         if (!navigator.geolocation) {
@@ -80,10 +145,8 @@ export default function AddressInput({
                             setIsDetecting(false);
                             if (status === 'OK' && results && results[0]) {
                                 const address = results[0].formatted_address;
+                                setInputValue(address);
                                 onChange(address, latitude, longitude);
-                                if (inputRef.current) {
-                                    inputRef.current.value = address;
-                                }
                             } else {
                                 onChange('', latitude, longitude);
                                 setError('Could not determine address. Please type it manually.');
@@ -108,20 +171,16 @@ export default function AddressInput({
     };
 
     return (
-        <div className={`relative ${className}`}>
+        <div ref={containerRef} className={`relative ${className}`}>
             <div className="relative">
                 <input
                     ref={inputRef}
                     type="text"
-                    defaultValue={value}
+                    value={inputValue}
                     placeholder={placeholder}
                     required={required}
-                    onChange={(e) => {
-                        // If user clears the input, reset
-                        if (!e.target.value) {
-                            onChange('', undefined, undefined);
-                        }
-                    }}
+                    onChange={handleInputChange}
+                    onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                     className="w-full bg-white border border-hairline px-4 py-3 pr-10 text-sm focus:outline-none focus:border-rose transition-colors"
                 />
 
@@ -138,6 +197,27 @@ export default function AddressInput({
                     )}
                 </button>
             </div>
+
+            {/* Suggestions dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+                <ul className="absolute z-50 w-full bg-white border border-hairline mt-1 shadow-lg max-h-60 overflow-y-auto">
+                    {suggestions.map((suggestion, index) => {
+                        const text = suggestion.placePrediction?.text?.toString() || '';
+                        return (
+                            <li
+                                key={index}
+                                onClick={() => handleSelectSuggestion(suggestion)}
+                                className="px-4 py-3 text-sm hover:bg-beige cursor-pointer border-b border-hairline last:border-b-0 transition-colors"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <MapPin size={14} className="text-espresso/30 flex-shrink-0" />
+                                    <span>{text}</span>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
 
             {/* Error message */}
             {error && (

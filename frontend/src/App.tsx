@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
+import { supabase, supabaseRestSelect, supabaseRestSelectSingle } from './lib/supabase';
 import { UserProvider, useUser } from './context/UserContext';
 import type { User } from './types';
 
@@ -31,12 +31,11 @@ function AppContent() {
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (session?.user) {
-                    // Fetch full profile
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .single();
+                    // Fetch full profile (direct REST to avoid AbortError)
+                    const { data: profile } = await supabaseRestSelectSingle('profiles', {
+                        select: '*',
+                        filters: { id: `eq.${session.user.id}` },
+                    });
 
                     if (profile) {
                         setCurrentUser({
@@ -68,11 +67,10 @@ function AppContent() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             try {
                 if (session?.user) {
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .single();
+                    const { data: profile } = await supabaseRestSelectSingle('profiles', {
+                        select: '*',
+                        filters: { id: `eq.${session.user.id}` },
+                    });
 
                     if (profile) {
                         setCurrentUser({
@@ -81,7 +79,6 @@ function AppContent() {
                             ...profile
                         });
                     } else {
-                        // Profile not found yet (may still be creating) — set basic user info
                         setCurrentUser({
                             id: session.user.id,
                             email: session.user.email || '',
@@ -94,7 +91,6 @@ function AppContent() {
                 }
             } catch (err) {
                 console.error('Auth state change error:', err);
-                // Still set basic user info if we have a session
                 if (session?.user) {
                     setCurrentUser({
                         id: session.user.id,
@@ -290,21 +286,19 @@ function ListingDetailWrapper({
         const fetchListing = async () => {
             if (!listingId) return;
 
-            const { data: listingData } = await supabase
-                .from('listings')
-                .select(`*, listing_images (*)`)
-                .eq('id', listingId)
-                .single();
+            const { data: listingData } = await supabaseRestSelectSingle('listings', {
+                select: '*, listing_images(*)',
+                filters: { id: `eq.${listingId}` },
+            });
 
             if (listingData) {
                 setListing(listingData);
 
                 // Fetch seller
-                const { data: sellerData } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', listingData.owner_id)
-                    .single();
+                const { data: sellerData } = await supabaseRestSelectSingle('profiles', {
+                    select: '*',
+                    filters: { id: `eq.${listingData.owner_id}` },
+                });
 
                 if (sellerData) {
                     setSeller(sellerData as User);
@@ -367,19 +361,19 @@ function ProfileWrapper({
                 setProfileUser(currentUser);
 
                 // Fetch user's listings
-                const { data: listings } = await supabase
-                    .from('listings')
-                    .select(`*, listing_images (*)`)
-                    .eq('owner_id', currentUser.id);
+                const { data: listings } = await supabaseRestSelect('listings', {
+                    select: '*, listing_images(*)',
+                    filters: { owner_id: `eq.${currentUser.id}` },
+                });
 
                 setUserListings(listings || []);
 
                 // Fetch saved listings
                 if (favorites.length > 0) {
-                    const { data: saved } = await supabase
-                        .from('listings')
-                        .select(`*, listing_images (*)`)
-                        .in('id', favorites);
+                    const { data: saved } = await supabaseRestSelect('listings', {
+                        select: '*, listing_images(*)',
+                        filters: { id: `in.(${favorites.join(',')})` },
+                    });
 
                     setSavedListings(saved || []);
                 }

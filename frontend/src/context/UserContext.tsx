@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 import type { Listing } from '../types';
 import { MOCK_LISTINGS } from '../data/mockData';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseRestSelect, supabaseRestInsert, supabaseRestDelete } from '../lib/supabase';
 
 interface UserContextType {
     favorites: string[];
@@ -23,15 +23,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // Mock data for demo - in production this would come from backend
     const [myListings] = useState<Listing[]>(() => {
-        return MOCK_LISTINGS.slice(0, 2); // Pretend user owns first 2 listings
+        return MOCK_LISTINGS.slice(0, 2);
     });
 
     const [purchases] = useState<Listing[]>(() => {
-        return MOCK_LISTINGS.slice(5, 6); // Pretend user bought 1 item
+        return MOCK_LISTINGS.slice(5, 6);
     });
 
     const [rentals] = useState<Listing[]>(() => {
-        return MOCK_LISTINGS.slice(3, 4); // Pretend user rented 1 item
+        return MOCK_LISTINGS.slice(3, 4);
     });
 
     // Initialize user and fetch favorites
@@ -42,14 +42,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
-                    // Fetch from Supabase
-                    const { data } = await supabase
-                        .from('favorites')
-                        .select('listing_id')
-                        .eq('user_id', session.user.id);
+                    // Fetch from Supabase (direct REST to avoid AbortError)
+                    const { data } = await supabaseRestSelect('favorites', {
+                        select: 'listing_id',
+                        filters: { user_id: `eq.${session.user.id}` },
+                    });
 
                     if (data) {
-                        setFavorites(data.map(f => f.listing_id));
+                        setFavorites(data.map((f: any) => f.listing_id));
                     }
                 } else {
                     // Fallback to localStorage for guests
@@ -69,11 +69,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
             try {
                 setUser(session?.user ?? null);
                 if (session?.user) {
-                    const { data } = await supabase
-                        .from('favorites')
-                        .select('listing_id')
-                        .eq('user_id', session.user.id);
-                    if (data) setFavorites(data.map(f => f.listing_id));
+                    const { data } = await supabaseRestSelect('favorites', {
+                        select: 'listing_id',
+                        filters: { user_id: `eq.${session.user.id}` },
+                    });
+                    if (data) setFavorites(data.map((f: any) => f.listing_id));
                 } else {
                     setFavorites([]);
                 }
@@ -97,7 +97,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setFavorites(prev => [...prev, listingId]);
 
         if (user) {
-            await supabase.from('favorites').insert({
+            await supabaseRestInsert('favorites', {
                 user_id: user.id,
                 listing_id: listingId
             });
@@ -109,10 +109,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setFavorites(prev => prev.filter(id => id !== listingId));
 
         if (user) {
-            await supabase.from('favorites')
-                .delete()
-                .eq('user_id', user.id)
-                .eq('listing_id', listingId);
+            // Use direct REST delete to avoid AbortError
+            await supabaseRestDelete('favorites', {
+                user_id: `eq.${user.id}`,
+                listing_id: `eq.${listingId}`,
+            }).catch(() => { /* ignore delete errors */ });
         }
     };
 

@@ -25,12 +25,17 @@ export default function Login({ onLogin, onBack }: LoginProps) {
     setIsLoading(true);
     setError(null);
 
+    // Create an AbortController with timeout to prevent infinite loading
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+
     try {
       if (isSignup) {
         // Validate location
         if (!location) {
           setError('Please select your location');
           setIsLoading(false);
+          clearTimeout(timeoutId);
           return;
         }
 
@@ -45,6 +50,8 @@ export default function Login({ onLogin, onBack }: LoginProps) {
             }
           }
         });
+
+        clearTimeout(timeoutId);
 
         if (signUpError) throw signUpError;
 
@@ -62,20 +69,20 @@ export default function Login({ onLogin, onBack }: LoginProps) {
         }
 
         if (data.user) {
-          // Create/update profile with location using upsert (non-blocking)
+          // Update profile with location (non-blocking)
+          // Use update instead of upsert since the trigger already created the row
           supabase
             .from('profiles')
-            .upsert({
-              id: data.user.id,
+            .update({
               full_name: displayName,
-              username: username,
               location: location,
               latitude: latitude,
-              longitude: longitude
-            }, { onConflict: 'id' })
+              longitude: longitude,
+            })
+            .eq('id', data.user.id)
             .then(({ error: profileError }) => {
               if (profileError) {
-                console.error('Profile upsert error:', profileError);
+                console.error('Profile update error:', profileError);
               }
             });
 
@@ -88,12 +95,28 @@ export default function Login({ onLogin, onBack }: LoginProps) {
           password
         });
 
+        clearTimeout(timeoutId);
+
         if (signInError) throw signInError;
         onLogin();
       }
     } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error('Auth error:', err);
-      setError(err.message || 'Authentication failed');
+
+      // Detect blocked requests or network issues
+      const errorMessage = err.message?.toLowerCase() || '';
+      const errorName = err.name?.toLowerCase() || '';
+
+      if (errorName === 'aborterror' || errorMessage.includes('abort') || errorMessage.includes('signal')) {
+        setError('Request timed out. Please check your internet connection and try again.');
+      } else if (errorMessage.includes('failed to fetch') || errorMessage.includes('network') || errorMessage.includes('blocked')) {
+        setError('Connection blocked. Please disable any ad blockers or try in incognito mode.');
+      } else if (errorMessage.includes('invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials.');
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

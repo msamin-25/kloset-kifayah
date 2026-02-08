@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Filter, ChevronDown, Grid, LayoutList, Search, X, MapPin } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabaseRestSelect } from '../lib/supabase';
 import { calculateDistance, formatDistance } from '../lib/distance';
 import type { Listing, User, Category, ListingMode } from '../types';
 import ListingCard from '../components-new/ListingCard';
@@ -26,15 +26,12 @@ export default function Browse({ currentUser, onViewListing, onToggleSave }: Bro
     const fetchData = async () => {
       setIsLoading(true);
 
-      // Fetch listings with images
-      const { data: listingsData, error: listingsError } = await supabase
-        .from('listings')
-        .select(`
-                    *,
-                    listing_images (*)
-                `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      // Fetch listings with images (direct REST to avoid AbortError)
+      const { data: listingsData, error: listingsError } = await supabaseRestSelect('listings', {
+        select: '*, listing_images(*)',
+        filters: { status: 'eq.active', is_approved: 'eq.true' },
+        order: 'created_at.desc',
+      });
 
       if (listingsError) {
         console.error('Error fetching listings:', listingsError);
@@ -43,9 +40,9 @@ export default function Browse({ currentUser, onViewListing, onToggleSave }: Bro
       }
 
       // Fetch profiles for seller info
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('*');
+      const { data: profilesData } = await supabaseRestSelect('profiles', {
+        select: '*',
+      });
 
       if (profilesData) {
         setUsers(profilesData as User[]);
@@ -53,13 +50,13 @@ export default function Browse({ currentUser, onViewListing, onToggleSave }: Bro
 
       // Fetch user's saved listings if logged in
       if (currentUser) {
-        const { data: favoritesData } = await supabase
-          .from('favorites')
-          .select('listing_id')
-          .eq('user_id', currentUser.id);
+        const { data: favoritesData } = await supabaseRestSelect('favorites', {
+          select: 'listing_id',
+          filters: { user_id: `eq.${currentUser.id}` },
+        });
 
         if (favoritesData) {
-          setSavedListings(favoritesData.map(f => f.listing_id));
+          setSavedListings(favoritesData.map((f: any) => f.listing_id));
         }
       }
 
