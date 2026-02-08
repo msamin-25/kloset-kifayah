@@ -8,7 +8,7 @@ Thumbs.db
 .vscode/
 
 # Local Frontend Testing
-frontend/
+
 node_modules/
 
 # Secrets
