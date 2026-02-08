@@ -1,0 +1,7 @@
+{
+  "name": "Clothy - Modest Fashion Rental & Pre-loved Marketplace",
+  "description": "A premier marketplace focused on renting high-quality modest clothing, with exclusive options for buying pre-loved Islamic wear.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

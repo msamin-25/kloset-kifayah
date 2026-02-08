@@ -1,0 +1,135 @@
+
+import { Category, Product } from '../types';
+
+export const MOCK_PRODUCTS: Product[] = [
+  {
+    id: '1',
+    name: 'Royal Silk Abaya',
+    description: 'A masterpiece of modesty. Premium silk crepe with intricate silver hand-embroidery.',
+    rentPrice: 35,
+    sellPrice: 280,
+    category: Category.MODEST_WOMEN,
+    image: 'https://images.unsplash.com/photo-1605763240000-7e93b172d754?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '3 Days',
+    brand: 'An-Nisa Couture',
+    tags: ['Abaya', 'Formal', 'Silk']
+  },
+  {
+    id: '2',
+    name: 'Premium White Panjabi',
+    description: 'Fine cotton Panjabi with minimalist thread work on the collar and cuffs.',
+    rentPrice: 20,
+    sellPrice: 110,
+    category: Category.MODEST_MEN,
+    image: 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '4 Days',
+    brand: 'Al-Fares Heritage',
+    tags: ['Panjabi', 'Cotton', 'Men']
+  },
+  {
+    id: '3',
+    name: 'Midnight Chiffon Niqab',
+    description: 'Triple-layered breathable chiffon for ultimate comfort and elegance.',
+    rentPrice: 10,
+    sellPrice: 45,
+    category: Category.MODEST_WOMEN,
+    image: 'https://images.unsplash.com/photo-1585144860131-245d551c77f6?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '7 Days',
+    brand: 'PureVeil',
+    tags: ['Niqab', 'Essentials']
+  },
+  {
+    id: '4',
+    name: 'Embroidered Heritage Burkah',
+    description: 'Full-length traditional Burkah with modern geometric embroidery patterns.',
+    rentPrice: 40,
+    sellPrice: 195,
+    category: Category.MODEST_WOMEN,
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '3 Days',
+    brand: 'Sahara Grace',
+    tags: ['Burkah', 'Full Coverage']
+  },
+  {
+    id: '5',
+    name: 'Satin Luxury Hijab Set',
+    description: 'Set of three shimmering satin hijabs in desert tones (Sand, Sienna, Dust).',
+    rentPrice: 12,
+    sellPrice: 65,
+    category: Category.ACCESSORIES,
+    image: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '7 Days',
+    brand: 'ModaHijab',
+    tags: ['Hijab', 'Accessories']
+  },
+  {
+    id: '6',
+    name: 'Wool Blend Thobe',
+    description: 'Structured winter thobe in charcoal grey. Warmth meets traditional design.',
+    rentPrice: 30,
+    sellPrice: 160,
+    category: Category.MODEST_MEN,
+    image: 'https://images.unsplash.com/photo-1598153346810-860daa814c4b?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '5 Days',
+    brand: 'Qasr Al-Mada',
+    tags: ['Thobe', 'Winter']
+  },
+  {
+    id: '7',
+    name: 'Linen Wedding Suit',
+    description: 'Sharp three-piece linen suit for the modern gentleman. Breathable and elegant.',
+    rentPrice: 55,
+    sellPrice: 450,
+    category: Category.MEN,
+    image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=800',
+    isIslamic: false,
+    rentalPeriod: '3 Days',
+    brand: 'LuxeTailor',
+    tags: ['Suit', 'Wedding', 'Linen']
+  },
+  {
+    id: '8',
+    name: 'Celestial Evening Gown',
+    description: 'Modest evening gown with high neckline and floor-length sequins.',
+    rentPrice: 90,
+    sellPrice: 720,
+    category: Category.WOMEN,
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800',
+    isIslamic: false,
+    rentalPeriod: '2 Days',
+    brand: 'EliteModesty',
+    tags: ['Gown', 'Evening', 'Modest']
+  },
+  {
+    id: '9',
+    name: 'Classic Navy Panjabi',
+    description: 'Versatile navy blue Panjabi. Perfect for Friday prayers or family gatherings.',
+    rentPrice: 18,
+    sellPrice: 95,
+    category: Category.MODEST_MEN,
+    image: 'https://images.unsplash.com/photo-1610652492500-ded49ceeb378?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '4 Days',
+    brand: 'Heritage Threads',
+    tags: ['Panjabi', 'Classic']
+  },
+  {
+    id: '10',
+    name: 'Opal Bloom Kimono Abaya',
+    description: 'Open kimono style abaya with floral motifs and silk belt.',
+    rentPrice: 42,
+    sellPrice: 310,
+    category: Category.MODEST_WOMEN,
+    image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=800',
+    isIslamic: true,
+    rentalPeriod: '3 Days',
+    brand: 'BloomModesty',
+    tags: ['Abaya', 'Kimono']
+  }
+];
