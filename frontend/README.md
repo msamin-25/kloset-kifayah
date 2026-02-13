@@ -1,14 +1,43 @@
-# React + TypeScript + Vite
+# 🎨 Kloset Kifayah — Frontend Progress
 
+> Frontend development progress for **Kloset Kifayah**, a clothing rental & resale platform focused on accessible and inclusive fashion experiences.  
+> Built with **React** and **TypeScript**, this frontend provides the user interface for browsing listings, AI-assisted search, and marketplace interactions.
+
+⚠️ This README documents **frontend development only**.  
+See the main project README for backend, database, and full architecture details.
+
+---
+
+## 🚀 Overview
+
+The frontend aims to deliver a modern, responsive, and scalable UI that connects seamlessly with a Python backend and RAG-powered AI system.
+
+### 🎯 Goals
+- Clean marketplace browsing experience
+- Modular component-based architecture
+- Responsive UI for different screen sizes
+- Easy integration with backend APIs
+- Future-ready AI search interface
+
+---
+
+## 🏗️ Tech Stack
+
+- **React**
+- **TypeScript**
+- Component-based UI architecture
+- REST API integration
+
+---
+
+## 📂 Frontend Structure
+
+# React + TypeScript + Vite
 
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
 ## Expanding the ESLint configuration
 
